@@ -64,32 +64,32 @@ def batch_knn(
 
 
 def test_1neighbor_1d():
-    needle_X=np.array([[0.1],
-                       [0.9],
-                       [2.1],
-                       [2.9],
-                       [4.1]])
-    haystack_Xy=np.array([[0., 0.],
-                          [1., 1.],
-                          [2., 2.],
-                          [3., 3.],
-                          [4., 4.]])
+    needle_X = np.array([[0.1],
+                         [0.9],
+                         [2.1],
+                         [2.9],
+                         [4.1]])
+    haystack_Xy = np.array([[0., 0.],
+                            [1., 1.],
+                            [2., 2.],
+                            [3., 3.],
+                            [4., 4.]])
     d, y = batch_knn(1, needle_X, haystack_Xy)
     npt.assert_array_equal(y, haystack_Xy[:, 1:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
 
 
 def test_1neighbor_2d():
-    needle_X=np.array([[0.1, 0.0],
-                       [0.9, 1.0],
-                       [2.1, 2.0],
-                       [2.9, 3.0],
-                       [4.1, 4.0]])
-    haystack_Xy=np.array([[0., 0., 0.],
-                          [1., 1., 1.],
-                          [2., 2., 2.],
-                          [3., 3., 3.],
-                          [4., 4., 4.]])
+    needle_X = np.array([[0.1, 0.0],
+                         [0.9, 1.0],
+                         [2.1, 2.0],
+                         [2.9, 3.0],
+                         [4.1, 4.0]])
+    haystack_Xy = np.array([[0., 0., 0.],
+                            [1., 1., 1.],
+                            [2., 2., 2.],
+                            [3., 3., 3.],
+                            [4., 4., 4.]])
     d, y = batch_knn(1, needle_X, haystack_Xy)
     npt.assert_array_equal(y, haystack_Xy[:, 2:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
