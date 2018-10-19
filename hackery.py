@@ -28,7 +28,7 @@ def batch_knn(
     assert needle_X.shape[1] + 1 == haystack_Xy.shape[1]
     assert 0 < neighbors <= haystack_len
 
-    # Storage for the nearest neighbors and their corresponding value
+    # Storage for the nearest distances and their corresponding values
     neighbors_d = np.empty((needle_len, neighbors), dtype=float, order='F')
     neighbors_y = np.empty_like(neighbors_d)
 
