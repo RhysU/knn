@@ -9,7 +9,7 @@ def batch_knn(
     neighbors: int,
     needle_X: typing.Any,
     haystack_Xy: typing.Any,
-    block_size: typing.Optional[int] = None
+    chunk_size: typing.Optional[int] = None
 ) -> typing.Tuple[np.array, np.array]:
     """
     Find y's corresponding to the nearest neighbors of needle_X.
@@ -20,7 +20,7 @@ def batch_knn(
     at least as many haystack rows as neighbors.  Result are the nearest
     (distances**2, values) to needle_X, where the rows correspond to needle_X
     rows and columns to neighbors.  Rows in the results are *not* sorted.
-    Input needle_X is processed in stages when block_size is provided.
+    Input needle_X is processed in stages when chunk_size is provided.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
@@ -30,10 +30,20 @@ def batch_knn(
     assert needle_X.shape[1] + 1 == haystack_Xy.shape[1]
     assert 0 < neighbors <= haystack_len
 
-    # When block_size is provided, subdivide needle_X.
+    # When chunk_size is provided, subdivide needle_X for processing.
     # Subdivision in this manner is over read-only, Fortran-ordered data.
-    if block_size is not None:
-        raise NotImplementedError()
+    if chunk_size is not None:
+        start = 0
+        chunked = []
+        while start < needle_len:
+            end = start + chunk_size
+            chunked.append(batch_knn(neighbors=neighbors,
+                                     needle_X=needle_X[start:end],
+                                     haystack_Xy=haystack_Xy,
+                                     chunk_size=None))
+            start = end
+        neighbors_d, neighbors_y = zip(*chunked)
+        return np.concatenate(neighbors_d), np.concatenate(neighbors_y)
 
     # Storage for the nearest distances and their corresponding values
     neighbors_d = np.empty((needle_len, neighbors), dtype=float, order='F')
@@ -102,7 +112,7 @@ def test_2neighbor_1d():
                             [2., 2.],
                             [3., 3.],
                             [4., 4.]])
-    d, y = batch_knn(2, needle_X, haystack_Xy)
+    d, y = batch_knn(2, needle_X, haystack_Xy, chunk_size=None)
     npt.assert_array_equal(y, np.array([[0.0, 1.0],
                                         [0.0, 1.0],
                                         [2.0, 3.0],
@@ -113,6 +123,9 @@ def test_2neighbor_1d():
                                          [0.01, 0.81],
                                          [0.01, 0.81],
                                          [0.01, 1.21]]))
+    dc, yc = batch_knn(2, needle_X, haystack_Xy, chunk_size=2)
+    npt.assert_array_equal(d, dc)
+    npt.assert_array_equal(y, yc)
 
 
 def test_1neighbor_2d():
@@ -126,9 +139,12 @@ def test_1neighbor_2d():
                             [2., 2., 2.],
                             [3., 3., 3.],
                             [4., 4., 4.]])
-    d, y = batch_knn(1, needle_X, haystack_Xy)
+    d, y = batch_knn(1, needle_X, haystack_Xy, chunk_size=None)
     npt.assert_array_equal(y, haystack_Xy[:, 2:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
+    dc, yc = batch_knn(1, needle_X, haystack_Xy, chunk_size=4)
+    npt.assert_array_equal(d, dc)
+    npt.assert_array_equal(y, yc)
 
 
 def test_3neighbor_2d():
@@ -140,11 +156,14 @@ def test_3neighbor_2d():
                             [0., 0., 0.],  # Desired starts here
                             [1., 5., 2.],
                             [1., 1., 1.]])
-    d, y = batch_knn(3, needle_X, haystack_Xy)
+    d, y = batch_knn(3, needle_X, haystack_Xy, chunk_size=None)
     assert (y < 3).all()
     assert (0**2 + 0**2) in d
     assert (1**2 + 1**2) in d
     assert (1**2 + 5**2) in d
+    dc, yc = batch_knn(3, needle_X, haystack_Xy, chunk_size=4)
+    npt.assert_array_equal(d, dc)
+    npt.assert_array_equal(y, yc)
 
 
 # Very simple driver for performance testing
