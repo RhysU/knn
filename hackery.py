@@ -45,7 +45,6 @@ def batch_knn(
     # Process the remainder of the haystack...
     distance = np.empty((needle_len,), dtype=float)
     values = np.empty_like(distance)
-    mask = np.empty((needle_len,), dtype=bool)
     for i in range(neighbors, haystack_len):
         # ...by first computing distances**2.
         np.subtract(needle_X, haystack_Xy[i, :-1], out=scratch)
@@ -55,7 +54,7 @@ def batch_knn(
         # ...by then 'bubbling away' distant data.  Yes, one bubble pass.
         np.copyto(dst=values, src=haystack_Xy[i, -1])
         for j in range(neighbors):
-            np.less(distance, neighbors_d[:, j], out=mask)
+            mask = distance < neighbors_d[:, j]
             # Swap distance[mask], neighbors_d[mask, j] in fast manner.
             distance, neighbors_d[:, j] = (
                     np.where(mask, neighbors_d[:, j], distance),
