@@ -20,7 +20,7 @@ def batch_knn(
     at least as many haystack rows as neighbors.  Result are the nearest
     (distances**2, values) to needle_X, where the rows correspond to needle_X
     rows and columns to neighbors.  Rows in the results are *not* sorted.
-    Input needle_X is processed in stages when chunking is provided.
+    Input needle_X rows are processed per chunking, when chunking provided.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
