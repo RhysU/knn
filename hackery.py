@@ -33,7 +33,7 @@ def batch_knn(
     neighbors_y = np.empty_like(neighbors_d)
 
     # Fill the initial distances**2 from the top of the haystack
-    scratch = np.empty_like(needle_X, dtype=float)
+    scratch = np.empty_like(needle_X, dtype=float, order='F')
     for i in range(neighbors):
         np.subtract(needle_X, haystack_Xy[i, :-1], out=scratch)
         np.square(scratch, out=scratch)
@@ -53,12 +53,18 @@ def batch_knn(
         np.sum(scratch, axis=1, out=distance)
 
         # ...by then 'bubbling away' further data.
-        # TODO Remove temporaries in swap operations.
         np.copyto(dst=values, src=haystack_Xy[i, -1], casting='same_kind')
         for j in range(neighbors):
+            # Compute mask for subsequent swap operation
             np.less(distance, neighbors_d[:, j], out=mask)
-            distance[mask], neighbors_d[mask, j] = neighbors_d[mask, j], distance[mask]
-            values[mask], neighbors_y[mask, j] = neighbors_y[mask, j], values[mask]
+            # Swap distance[mask], neighbors_d[mask, j]
+            np.copyto(dst=scratch[:, 0], src=distance)
+            np.copyto(dst=distance, src=neighbors_d[:, j], where=mask)
+            np.copyto(dst=neighbors_d[:, j], src=scratch[:, 0], where=mask)
+            # Swap values[mask], neighbors_y[mask, j]
+            np.copyto(dst=scratch[:, 0], src=values)
+            np.copyto(dst=values, src=neighbors_y[:, j], where=mask)
+            np.copyto(dst=neighbors_y[:, j], src=scratch[:, 0], where=mask)
 
     # Return the k-nearest (distances**2, values).
     return neighbors_d, neighbors_y
