@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import typing
 import numpy as np
 import numpy.testing as npt
@@ -133,3 +134,21 @@ def test_3neighbor_2d():
     assert (0**2 + 0**2) in d
     assert (1**2 + 1**2) in d
     assert (1**2 + 5**2) in d
+
+
+# Very simple driver for performance testing
+if __name__ == '__main__':
+    # Parse incoming arguments
+    p = argparse.ArgumentParser()
+    p.add_argument('seed',      type=int, help='Random seed')
+    p.add_argument('dimension', type=int, help='# of coordinates')
+    p.add_argument('neighbors', type=int, help='# of neighbors to find per needle')
+    p.add_argument('needles',   type=int, help='# of vectors to find')
+    p.add_argument('haystacks', type=int, help='# of vectors to search')
+    args = p.parse_args()
+
+    # Generate the sample data
+    random      = np.random.RandomState(args.seed)
+    needle_X    = random.randn(args.needles, args.dimension)
+    haystack_Xy = random.randn(args.haystacks, args.dimension + 1)
+    d, y = batch_knn(args.neighbors, needle_X, haystack_Xy)
