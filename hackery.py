@@ -52,16 +52,18 @@ def batch_knn(
         np.square(scratch, out=scratch)
         np.sum(scratch, axis=1, out=distance)
 
-        # ...by then 'bubbling away' further data.
+        # ...by then 'bubbling away' distant data.  Yes, one bubble pass.
         np.copyto(dst=values, src=haystack_Xy[i, -1])
         for j in range(neighbors):
             np.less(distance, neighbors_d[:, j], out=mask)
-            # Swap distance[mask], neighbors_d[mask, j]
-            # That is, distance[mask], neighbors_d[mask, j] = neighbors_d[mask, j], distance[mask]
-            distance, neighbors_d[:, j] = np.where(mask, neighbors_d[:, j], distance), np.where(mask, distance, neighbors_d[:,j ])
-            # Swap values[mask], neighbors_y[mask, j]
-            # That is, values[mask], neighbors_y[mask, j] = neighbors_y[mask, j], values[mask]
-            values, neighbors_y[:, j] = np.where(mask, neighbors_y[:, j], values), np.where(mask, values, neighbors_y[:,j ])
+            # Swap distance[mask], neighbors_d[mask, j] in fast manner.
+            distance, neighbors_d[:, j] = (
+                    np.where(mask, neighbors_d[:, j], distance),
+                    np.where(mask, distance, neighbors_d[:, j]))
+            # Swap values[mask], neighbors_y[mask, j] in fast manner.
+            values, neighbors_y[:, j] = (
+                    np.where(mask, neighbors_y[:, j], values),
+                    np.where(mask, values, neighbors_y[:, j]))
 
     # Return the k-nearest (distances**2, values).
     return neighbors_d, neighbors_y
