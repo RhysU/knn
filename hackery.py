@@ -117,3 +117,16 @@ def test_1neighbor_2d():
     d, y = batch_knn(1, needle_X, haystack_Xy)
     npt.assert_array_equal(y, haystack_Xy[:, 2:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
+
+
+def test_3neighbor_2d():
+    needle_X = np.array([[0.0, 0.0]])
+    haystack_Xy = np.array([[2., 9., 3.],
+                            [0., 0., 0.],
+                            [1., 5., 2.],
+                            [1., 1., 1.]])
+    d, y = batch_knn(3, needle_X, haystack_Xy)
+    assert (y < 3).all()
+    assert (0**2 + 0**2) in d
+    assert (1**2 + 1**2) in d
+    assert (1**2 + 5**2) in d
