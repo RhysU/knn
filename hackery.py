@@ -43,7 +43,7 @@ def batch_knn(
     neighbors_y[:, :neighbors] = haystack_Xy[:neighbors, -1]
 
     # Process the remainder of the haystack...
-    distance = np.empty((needle_len,), dtype=float)
+    distance = np.empty((needle_len,), dtype=float, order='F')
     values = np.empty_like(distance)
     for i in range(neighbors, haystack_len):
         # ...by first computing distances**2.
