@@ -53,7 +53,7 @@ def batch_knn(
         np.sum(scratch, axis=1, out=distance)
 
         # ...by then 'bubbling away' further data.
-        np.copyto(dst=values, src=haystack_Xy[i, -1], casting='same_kind')
+        np.copyto(dst=values, src=haystack_Xy[i, -1])
         for j in range(neighbors):
             np.less(distance, neighbors_d[:, j], out=mask)
             distance[mask], neighbors_d[mask, j] = neighbors_d[mask, j], distance[mask]
