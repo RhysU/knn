@@ -15,9 +15,9 @@ def batch_knn(
     Input needle_X must have one fewer column than haystack_Xy.  All columns
     of needle_X and the all-but-last are coordinates.  The last column
     of haystack_Xy contains the values There must be at least as many
-    haystack rows as neighbors.  Result are the nearest (distances, values)
-    to needle_X, where the rows correspond to needle_X rows and columns
-    to neighbors.
+    haystack rows as neighbors.  Result are the nearest (distances**2,
+    values) to needle_X, where the rows correspond to needle_X rows and
+    columns to neighbors.  Rows in the results are *not* sorted.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
@@ -31,7 +31,7 @@ def batch_knn(
     neighbors_d = np.empty((needle_len, neighbors), dtype=float, order='F')
     neighbors_y = np.empty_like(neighbors_d)
 
-    # Fill the initial distances from the top of the haystack
+    # Fill the initial distances**2 from the top of the haystack
     scratch = np.empty_like(needle_X, dtype=float)
     for i in range(neighbors):
         np.subtract(needle_X, haystack_Xy[i, :-1], out=scratch)
@@ -46,7 +46,7 @@ def batch_knn(
     values = np.empty_like(distance)
     mask = np.empty((needle_len,), dtype=bool)
     for i in range(neighbors, haystack_len):
-        # ...by first computing distances.
+        # ...by first computing distances**2.
         np.subtract(needle_X, haystack_Xy[i, :-1], out=scratch)
         np.square(scratch, out=scratch)
         np.sum(scratch, axis=1, out=distance)
@@ -59,7 +59,7 @@ def batch_knn(
             distance[mask], neighbors_d[mask, j] = neighbors_d[mask, j], distance[mask]
             values[mask], neighbors_y[mask, j] = neighbors_y[mask, j], values[mask]
 
-    # Return the k-nearest (distances, values).
+    # Return the k-nearest (distances**2, values).
     return neighbors_d, neighbors_y
 
 
@@ -79,6 +79,30 @@ def test_1neighbor_1d():
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
 
 
+def test_2neighbor_1d():
+    needle_X = np.array([[0.1],
+                         [0.9],
+                         [2.1],
+                         [2.9],
+                         [4.1]])
+    haystack_Xy = np.array([[0., 0.],
+                            [1., 1.],
+                            [2., 2.],
+                            [3., 3.],
+                            [4., 4.]])
+    d, y = batch_knn(2, needle_X, haystack_Xy)
+    npt.assert_array_equal(y, np.array([[0.0, 1.0],
+                                        [0.0, 1.0],
+                                        [2.0, 3.0],
+                                        [3.0, 2.0],
+                                        [4.0, 3.0]]))
+    npt.assert_almost_equal(d, np.array([[0.01, 0.81],
+                                         [0.81, 0.01],
+                                         [0.01, 0.81],
+                                         [0.01, 0.81],
+                                         [0.01, 1.21]]))
+
+
 def test_1neighbor_2d():
     needle_X = np.array([[0.1, 0.0],
                          [0.9, 1.0],
@@ -93,9 +117,3 @@ def test_1neighbor_2d():
     d, y = batch_knn(1, needle_X, haystack_Xy)
     npt.assert_array_equal(y, haystack_Xy[:, 2:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
-
-# def test_thing():
-#     needle_X = np.random.randn(100, 2)
-#     haystack_Xy = np.random.randn(1000, 3)
-#     result = batch_knn(needle_X, haystack_Xy, 5)
-#     assert False
