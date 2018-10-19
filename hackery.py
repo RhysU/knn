@@ -55,16 +55,9 @@ def batch_knn(
         # ...by then 'bubbling away' further data.
         np.copyto(dst=values, src=haystack_Xy[i, -1], casting='same_kind')
         for j in range(neighbors):
-            # Compute mask for subsequent swap operation
             np.less(distance, neighbors_d[:, j], out=mask)
-            # Swap distance[mask], neighbors_d[mask, j]
-            np.copyto(dst=scratch[:, 0], src=distance)
-            np.copyto(dst=distance, src=neighbors_d[:, j], where=mask)
-            np.copyto(dst=neighbors_d[:, j], src=scratch[:, 0], where=mask)
-            # Swap values[mask], neighbors_y[mask, j]
-            np.copyto(dst=scratch[:, 0], src=values)
-            np.copyto(dst=values, src=neighbors_y[:, j], where=mask)
-            np.copyto(dst=neighbors_y[:, j], src=scratch[:, 0], where=mask)
+            distance[mask], neighbors_d[mask, j] = neighbors_d[mask, j], distance[mask]
+            values[mask], neighbors_y[mask, j] = neighbors_y[mask, j], values[mask]
 
     # Return the k-nearest (distances**2, values).
     return neighbors_d, neighbors_y
