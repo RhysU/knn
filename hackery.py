@@ -121,8 +121,11 @@ def test_1neighbor_2d():
 
 def test_3neighbor_2d():
     needle_X = np.array([[0.0, 0.0]])
-    haystack_Xy = np.array([[2., 9., 3.],
-                            [0., 0., 0.],
+    haystack_Xy = np.array([[2., 9., 3.],  # Ensure pushed out
+                            [3., 9., 4.],
+                            [4., 8., 5.],
+                            [5., 7., 6.],
+                            [0., 0., 0.],  # Desired starts here
                             [1., 5., 2.],
                             [1., 1., 1.]])
     d, y = batch_knn(3, needle_X, haystack_Xy)
