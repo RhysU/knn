@@ -9,7 +9,7 @@ def batch_knn(
     neighbors: int,
     needle_X: typing.Any,
     haystack_Xy: typing.Any,
-    chunk_size: typing.Optional[int] = None
+    chunking: typing.Optional[int] = None
 ) -> typing.Tuple[np.array, np.array]:
     """
     Find y's corresponding to the nearest neighbors of needle_X.
@@ -20,7 +20,7 @@ def batch_knn(
     at least as many haystack rows as neighbors.  Result are the nearest
     (distances**2, values) to needle_X, where the rows correspond to needle_X
     rows and columns to neighbors.  Rows in the results are *not* sorted.
-    Input needle_X is processed in stages when chunk_size is provided.
+    Input needle_X is processed in stages when chunking is provided.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
@@ -30,17 +30,17 @@ def batch_knn(
     assert needle_X.shape[1] + 1 == haystack_Xy.shape[1]
     assert 0 < neighbors <= haystack_len
 
-    # When chunk_size is provided, subdivide needle_X for processing.
+    # When chunking is provided, subdivide needle_X for processing.
     # Subdivision in this manner is over read-only, Fortran-ordered data.
-    if chunk_size is not None:
-        start = 0
-        chunked = []
+    if chunking is not None:
+        assert chunking > 0
+        start, chunked = 0, []
         while start < needle_len:
-            end = start + chunk_size
+            end = start + chunking
             chunked.append(batch_knn(neighbors=neighbors,
                                      needle_X=needle_X[start:end],
                                      haystack_Xy=haystack_Xy,
-                                     chunk_size=None))
+                                     chunking=None))
             start = end
         neighbors_d, neighbors_y = zip(*chunked)
         return np.concatenate(neighbors_d), np.concatenate(neighbors_y)
@@ -112,7 +112,7 @@ def test_2neighbor_1d():
                             [2., 2.],
                             [3., 3.],
                             [4., 4.]])
-    d, y = batch_knn(2, needle_X, haystack_Xy, chunk_size=None)
+    d, y = batch_knn(2, needle_X, haystack_Xy, chunking=None)
     npt.assert_array_equal(y, np.array([[0.0, 1.0],
                                         [0.0, 1.0],
                                         [2.0, 3.0],
@@ -123,7 +123,7 @@ def test_2neighbor_1d():
                                          [0.01, 0.81],
                                          [0.01, 0.81],
                                          [0.01, 1.21]]))
-    dc, yc = batch_knn(2, needle_X, haystack_Xy, chunk_size=2)
+    dc, yc = batch_knn(2, needle_X, haystack_Xy, chunking=2)
     npt.assert_array_equal(d, dc)
     npt.assert_array_equal(y, yc)
 
@@ -139,10 +139,10 @@ def test_1neighbor_2d():
                             [2., 2., 2.],
                             [3., 3., 3.],
                             [4., 4., 4.]])
-    d, y = batch_knn(1, needle_X, haystack_Xy, chunk_size=None)
+    d, y = batch_knn(1, needle_X, haystack_Xy, chunking=None)
     npt.assert_array_equal(y, haystack_Xy[:, 2:])
     npt.assert_almost_equal(d, 0.01 * np.ones((5, 1)))
-    dc, yc = batch_knn(1, needle_X, haystack_Xy, chunk_size=4)
+    dc, yc = batch_knn(1, needle_X, haystack_Xy, chunking=4)
     npt.assert_array_equal(d, dc)
     npt.assert_array_equal(y, yc)
 
@@ -156,12 +156,12 @@ def test_3neighbor_2d():
                             [0., 0., 0.],  # Desired starts here
                             [1., 5., 2.],
                             [1., 1., 1.]])
-    d, y = batch_knn(3, needle_X, haystack_Xy, chunk_size=None)
+    d, y = batch_knn(3, needle_X, haystack_Xy, chunking=None)
     assert (y < 3).all()
     assert (0**2 + 0**2) in d
     assert (1**2 + 1**2) in d
     assert (1**2 + 5**2) in d
-    dc, yc = batch_knn(3, needle_X, haystack_Xy, chunk_size=4)
+    dc, yc = batch_knn(3, needle_X, haystack_Xy, chunking=4)
     npt.assert_array_equal(d, dc)
     npt.assert_array_equal(y, yc)
 
@@ -175,10 +175,14 @@ if __name__ == '__main__':
     p.add_argument('neighbors', type=int, help='# of neighbors to find per needle')
     p.add_argument('needles',   type=int, help='# of vectors to find')
     p.add_argument('haystacks', type=int, help='# of vectors to search')
+    p.add_argument('chunking',  type=int, help='Process needles in chunks if non-zero')
     args = p.parse_args()
 
     # Generate the sample data
     random      = np.random.RandomState(args.seed)
     needle_X    = random.randn(args.needles, args.dimension)
     haystack_Xy = random.randn(args.haystacks, args.dimension + 1)
-    d, y = batch_knn(args.neighbors, needle_X, haystack_Xy)
+    d, y = batch_knn(neighbors=args.neighbors,
+                     needle_X=needle_X,
+                     haystack_Xy=haystack_Xy,
+                     chunking=args.chunking)
