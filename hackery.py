@@ -9,6 +9,7 @@ def batch_knn(
     neighbors: int,
     needle_X: typing.Any,
     haystack_Xy: typing.Any,
+    block_size: typing.Optional[int] = None
 ) -> typing.Tuple[np.array, np.array]:
     """
     Find y's corresponding to the nearest neighbors of needle_X.
@@ -19,6 +20,7 @@ def batch_knn(
     at least as many haystack rows as neighbors.  Result are the nearest
     (distances**2, values) to needle_X, where the rows correspond to needle_X
     rows and columns to neighbors.  Rows in the results are *not* sorted.
+    Input needle_X is processed in stages when block_size is provided.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
@@ -27,6 +29,11 @@ def batch_knn(
     haystack_len, _ = haystack_Xy.shape
     assert needle_X.shape[1] + 1 == haystack_Xy.shape[1]
     assert 0 < neighbors <= haystack_len
+
+    # When block_size is provided, subdivide needle_X.
+    # Subdivision in this manner is over read-only, Fortran-ordered data.
+    if block_size is not None:
+        raise NotImplementedError()
 
     # Storage for the nearest distances and their corresponding values
     neighbors_d = np.empty((needle_len, neighbors), dtype=float, order='F')
