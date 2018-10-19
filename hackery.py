@@ -172,10 +172,10 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('seed',      type=int, help='Random seed')
     p.add_argument('dimension', type=int, help='# of coordinates')
-    p.add_argument('neighbors', type=int, help='# of neighbors to find per needle')
+    p.add_argument('neighbors', type=int, help='# of neighbors per needle')
     p.add_argument('needles',   type=int, help='# of vectors to find')
     p.add_argument('haystacks', type=int, help='# of vectors to search')
-    p.add_argument('chunking',  type=int, help='Process needles in chunks if non-zero')
+    p.add_argument('chunking',  type=int, help='Process in chunks if non-zero')
     args = p.parse_args()
 
     # Generate the sample data
@@ -185,4 +185,4 @@ if __name__ == '__main__':
     d, y = batch_knn(neighbors=args.neighbors,
                      needle_X=needle_X,
                      haystack_Xy=haystack_Xy,
-                     chunking=args.chunking)
+                     chunking=args.chunking if args.chunking else None)
