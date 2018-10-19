@@ -14,11 +14,11 @@ def batch_knn(
     Find y's corresponding to the nearest neighbors of needle_X.
 
     Input needle_X must have one fewer column than haystack_Xy.  All columns
-    of needle_X and the all-but-last are coordinates.  The last column
-    of haystack_Xy contains the values There must be at least as many
-    haystack rows as neighbors.  Result are the nearest (distances**2,
-    values) to needle_X, where the rows correspond to needle_X rows and
-    columns to neighbors.  Rows in the results are *not* sorted.
+    of needle_X and the all-but-last of haystack_Xy are coordinates.
+    The last column of haystack_Xy contains the values There must be
+    at least as many haystack rows as neighbors.  Result are the nearest
+    (distances**2, values) to needle_X, where the rows correspond to needle_X
+    rows and columns to neighbors.  Rows in the results are *not* sorted.
     """
     # Coerce to nicely strided data and check shape congruence
     needle_X = np.asfortranarray(needle_X)
