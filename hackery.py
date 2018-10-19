@@ -18,7 +18,7 @@ def batch_knn(
     The last column of haystack_Xy contains the values There must be
     at least as many haystack rows as neighbors.  Result are the nearest
     (distances**2, values) to needle_X, where the rows correspond to needle_X
-    rows and columns to neighbors.  Rows in the results are *not* sorted.
+    rows and columns to neighbors.  Columns in the results are *not* sorted.
     """
     # Coerce to nicely strided data and check shape congruence.
     # (Though intuitive, processing needle_X in chunks is empirically slower.)
